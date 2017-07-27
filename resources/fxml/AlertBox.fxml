@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="AndreySerebryanskiy.minesweeper.AlertBox.AlertBoxController"
+      stylesheets="/css/style.css"
+      fx:id="alertBox"
+      spacing="10"
+      alignment="CENTER">
+    <padding>
+        <Insets>
+            <top>10</top>
+            <bottom>10</bottom>
+            <left>10</left>
+            <right>10</right>
+        </Insets>
+    </padding>
+
+    <Label fx:id="alertLabel" textAlignment="CENTER">
+        <VBox.margin>
+            <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
+        </VBox.margin>
+    </Label>
+    <HBox alignment="CENTER" spacing="20">
+        <children>
+            <Button fx:id="newGameButton" onAction="#handleLoadNewGame" styleClass="alertButton" text="New game" />
+            <Button fx:id="enoughButton" onAction="#handleCloseApp" styleClass="alertButton" text="Enough" />
+        </children>
+        <VBox.margin>
+            <Insets bottom="10.0" />
+        </VBox.margin>
+    </HBox>
+
+</VBox>

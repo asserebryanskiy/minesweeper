@@ -1,56 +1,58 @@
 package AndreySerebryanskiy.minesweeper;
 
-import javafx.fxml.FXMLLoader;
-import javafx.geometry.Pos;
-import javafx.scene.Parent;
+import AndreySerebryanskiy.minesweeper.AlertBox.AlertBox;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.StrokeLineJoin;
-import javafx.stage.Stage;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
+import javafx.scene.media.AudioClip;
 
 public class Game {
+    private static boolean gameIsWon = false;
+    private static int openedTiles;
 
-    private Battlefield field = Controller.getField();
-    private int numberOfBombs = field.getBombsCounter();
-    private int numberOfTiles = field.getxTiles() * field.getyTiles();
-    private int bombsRemainingInt = Integer.parseInt(field.bombsRemaining.getText());
-    private int openedTiles = 0;
-    public boolean isWon = false;
+    private static Battlefield field;
+    private static int numberOfBombs;
+    private static int numberOfTiles;
+    private static int bombsRemainingInt;
+    private static AudioClip applause;
 
-    public void open(Tile tile) {
+    public Game(int width, int height, boolean forTest) throws InvalidFieldSizeException {
+        field = new Battlefield(width, height, forTest);
+        numberOfBombs = field.getBombsCounter();
+        numberOfTiles = field.getxTiles() * field.getyTiles();
+        bombsRemainingInt = Integer.parseInt(field.bombsRemaining.getText());
+        openedTiles = 0;
+        applause = new AudioClip(getClass().getResource("/sounds/applause.mp3").toExternalForm());
+
+        if(!forTest) {
+            Main.getWindow().setScene(new Scene(field));
+        }
+    }
+
+    public static void open(Tile tile)  {
         if (tile.isOpened || tile.isMarked) {
             return;
         }
 
         if (tile.hasBomb) {
+            tile.setExploded();
             loseGame();
+            return;
         }
 
-        tile.setOpened(true);
+        tile.setOpened();
         openedTiles++;
-        System.out.println(openedTiles);
 
-        if (tile.bombs == 0) {
+        if (tile.bombsAround == 0) {
             field.getNeighbours(tile).forEach(t -> open(t));
         }
 
-        if(openedTiles == numberOfTiles - numberOfBombs) {
-            isWon = true;
-            System.out.println(isWon);
+        if(openedTiles == numberOfTiles - numberOfBombs
+                && !gameIsWon) {
+            gameIsWon = true;
+            winGame();
         }
     }
 
-    public void mark(Tile tile) {
+    public static void mark(Tile tile) {
         if (tile.isOpened) {
             return;
         } else if (tile.isMarked) {
@@ -65,60 +67,43 @@ public class Game {
         changeBombsRemaining();
     }
 
-    private void changeBombsRemaining() {
+    private static void changeBombsRemaining() {
         field.bombsRemaining.setText(String.valueOf(bombsRemainingInt));
     }
 
-    private boolean winGame() {
-        int counter = 0;
-        for(int y = 0; y< Controller.getField().getyTiles(); y++) {
-            for (int x = 0; x < Controller.getField().getxTiles(); x++) {
-                Tile tile = Controller.getField().getTiles()[x][y];
-                if(tile.isOpened) counter++;
-            }
-        }
-
-        if (counter == field.getBombsCounter()) return true;
-        return false;
+    private static void winGame() {
+        Timer.stop();
+        applause.play();
+        AlertBox congratulationsWindow = new AlertBox("Bravo!", "Well done! "
+                                                                    + System.lineSeparator()
+                                                                    + "You've finished in " + Timer.getCurrentTime() + " seconds"
+                                                                    + System.lineSeparator()
+                                                                    + System.lineSeparator()
+                                                                    + "Whanna play one more time?");
+        congratulationsWindow.display();
     }
 
-    private void loseGame() {
-        for(int y = 0; y< Controller.getField().getyTiles(); y++) {
-            for (int x = 0; x < Controller.getField().getxTiles(); x++) {
-                Tile tile = Controller.getField().getTiles()[x][y];
+    private static void loseGame() {
+        openAllTiles();
+        Timer.stop();
+        AlertBox gameOverWindow = new AlertBox("Game over", "Bad luck! "
+                                                                + System.lineSeparator() +
+                                                                "Whanna try one more time?");
+        gameOverWindow.display();
+    }
+
+    private static void openAllTiles() {
+        for(int y = 0; y< field.getyTiles(); y++) {
+            for (int x = 0; x < field.getxTiles(); x++) {
+                Tile tile = field.getTiles()[x][y];
                 if(!tile.isMarked) {
-                    tile.setOpened(true);
+                    tile.setOpened();
                 }
             }
         }
+    }
 
-        Stage popup = new Stage();
-        Label label = new Label("Bad luck! Whanna try one more time?");
-        Button btn = new Button("Try again");
-        btn.setOnMouseClicked(e -> {
-            Parent root = null;
-            try {
-                root = FXMLLoader.load(getClass().getResource("/fxml/Main.fxml"));
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
-            Main.getWindow().setScene(new Scene(root));
-            popup.close();
-        });
-        
-        Rectangle back = new Rectangle(250, 80, Color.LIGHTGRAY);
-        back.setStroke(Color.LIGHTGRAY);
-        back.setStrokeWidth(5);
-        back.setStrokeLineJoin(StrokeLineJoin.ROUND);
-
-        StackPane stackPane = new StackPane();
-        VBox vbox = new VBox(10);
-        vbox.setAlignment(Pos.CENTER);
-
-        vbox.getChildren().addAll(label, btn);
-        stackPane.getChildren().addAll(back, vbox);
-        popup.setScene(new Scene(stackPane));
-        popup.setTitle("Game over");
-        popup.show();
+    protected Battlefield getField() {
+        return field;
     }
 }

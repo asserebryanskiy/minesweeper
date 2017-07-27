@@ -1,6 +1,5 @@
 package AndreySerebryanskiy.minesweeper;
 
-import javafx.geometry.Insets;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.text.Text;
@@ -12,7 +11,7 @@ import java.util.List;
  * Created by andreyserebryanskiy on 14/07/2017.
  */
 
-public class Battlefield extends GridPane implements BattlefieldInterface {
+public class Battlefield extends GridPane {
     private int xTiles;
     private int yTiles;
 
@@ -21,19 +20,37 @@ public class Battlefield extends GridPane implements BattlefieldInterface {
 
     private Tile[][] tiles;
 
-    public Battlefield(int width, int height) {
-        createField(width, height);
+    public Battlefield(int width, int height, boolean forTest) throws InvalidFieldSizeException{
+        //checks if all elements will fit the field size
+        if (width % Tile.getTILE_SIZE() != 0
+                || height % Tile.getTILE_SIZE() != 0) {
+            throw new InvalidFieldSizeException("Width and height should be a multiple of "
+                                                + String.valueOf(Tile.getTILE_SIZE()));
+        } else if (width < 80) {
+            throw new InvalidFieldSizeException("Minimal width for the field is "
+                                                + String.valueOf(4*Tile.getTILE_SIZE()));
+        }
+
+        // creates a matrix of tiles, counts bombsAround for each Tile
+        if(forTest) {
+            createTestTileMatrix();
+        } else {
+            createRandomTileMatrix(width, height);
+        }
+        // adds bombs counter on the field in the right upper corner
+        addBombsCounter();
+        addTimer();
+        //generates field
+        generateField();
     }
 
-    @Override
-    public void createField(int width, int height) {
+    private void createRandomTileMatrix(int width, int height) {
         xTiles = width / Tile.getTILE_SIZE();
         yTiles = height / Tile.getTILE_SIZE();
 
         tiles = new Tile[xTiles][yTiles];
         bombsCounter = 0;
 
-        // creates an array of tiles, counts bombs
         for(int y = 0; y<yTiles; y++) {
             for(int x = 0; x<xTiles; x++) {
                 Tile tile = new Tile(x, y,Math.random() < 0.05);
@@ -43,19 +60,44 @@ public class Battlefield extends GridPane implements BattlefieldInterface {
                 tiles[x][y] = tile;
             }
         }
+    }
 
+    private void createTestTileMatrix() {
+        xTiles = 3;
+        yTiles = 3;
+        bombsCounter = 2;
+
+        tiles = new Tile[xTiles][yTiles];
+
+        for(int y = 0; y<yTiles; y++) {
+            for(int x = 0; x<xTiles; x++) {
+                Tile tile = new Tile(x, y,false);
+
+                tiles[x][y] = tile;
+            }
+        }
+        tiles[0][0].hasBomb = true;
+        tiles[1][0].hasBomb = true;
+    }
+
+    private void addTimer() {
+        Timer timer = new Timer();
+        add(timer, 0, 0);
+    }
+
+    private void addBombsCounter() {
         bombsRemaining = new Text(String.valueOf(bombsCounter));
-        Text timer = new Text("100");
-        add(timer, 0, 0, 2, 1);
-        add(bombsRemaining, xTiles-3, 0, 2, 1);
+        add(bombsRemaining, xTiles-2, 0, 2, 1);
+    }
 
-        // fills cells with bomb counts
+    private void generateField() {
         for(int y = 0; y < yTiles; y++) {
             for(int x = 0; x < xTiles; x++) {
                 Tile tile = tiles[x][y];
-                tile.bombs = (int)(getNeighbours(tile).stream().filter(t -> t.hasBomb).count());
-                if (tile.bombs>0 && !tile.hasBomb) {
-                    tile.value.setText(String.valueOf(tile.bombs));
+                tile.setId("Tile" + String.valueOf(x) + "." + String.valueOf(y));
+                tile.bombsAround = (int)(getNeighbours(tile).stream().filter(t -> t.hasBomb).count());
+                if (tile.bombsAround >0 && !tile.hasBomb) {
+                    tile.value.setText(String.valueOf(tile.bombsAround));
                 }
 
                 add(tile, x, y+1);
@@ -68,8 +110,8 @@ public class Battlefield extends GridPane implements BattlefieldInterface {
     public List<Tile> getNeighbours(Tile tile) {
         List<Tile> neighbours = new ArrayList<>();
 
-        int x = tile.getX();
-        int y = tile.getY();
+        int x = tile.getxCoordinate();
+        int y = tile.getyCoordinate();
 
         for(int i=-1; i<=1; i++){
             for(int j=-1; j<=1; j++) {

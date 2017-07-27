@@ -2,15 +2,12 @@ package AndreySerebryanskiy.minesweeper;
 
 
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.SVGPath;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-
-import java.util.ArrayList;
 
 /**
  * Created by andreyserebryanskiy on 14/07/2017.
@@ -19,24 +16,25 @@ public class Tile extends StackPane {
 
     private static final int TILE_SIZE = 20;
 
-    private int x;
-    private int y;
+    private int xCoordinate;
+    private int yCoordinate;
 
     protected boolean hasBomb;
     protected boolean isOpened;
     protected boolean isMarked;
+    protected boolean exploded;
 
     private SVGPath bomb;
     private Rectangle background;
     private SVGPath flag;
 
-    protected int bombs;
+    protected int bombsAround;
     protected Text value;
 
 
-    public Tile(int x, int y, boolean hasBomb) {
-        this.x = x;
-        this.y = y;
+    public Tile(int xCoordinate, int yCoordinate, boolean hasBomb) {
+        this.xCoordinate = xCoordinate;
+        this.yCoordinate = yCoordinate;
         this.hasBomb = hasBomb;
 
         bomb = new SVGPath();
@@ -63,16 +61,14 @@ public class Tile extends StackPane {
 
         setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.SECONDARY) {
-                game.mark(this);
+                Game.mark(this);
             } else {
-                game.open(this);
+                Game.open(this);
             }
         });
     }
 
-
-
-    public void setOpened(boolean booleanValue) {
+    public void setOpened() {
         isOpened = true;
         background.setVisible(false);
         if(hasBomb){
@@ -86,15 +82,20 @@ public class Tile extends StackPane {
         flag.setVisible(value);
     }
 
+    public void setExploded() {
+        exploded = true;
+        bomb.setFill(Color.RED);
+    }
+
     public static int getTILE_SIZE() {
         return TILE_SIZE;
     }
 
-    public int getX() {
-        return x;
+    public int getxCoordinate() {
+        return xCoordinate;
     }
 
-    public int getY() {
-        return y;
+    public int getyCoordinate() {
+        return yCoordinate;
     }
 }
